@@ -251,10 +251,10 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
-	spinlock_lock(&calltable_lock);
+	spin_lock(&calltable_lock);
 	del_pid(current->pid);
 	orig_exit_group(status);
-	spinlock_unlock(&calltable_lock);
+	spin_unlock(&calltable_lock);
 }
 //----------------------------------------------------------------
 
