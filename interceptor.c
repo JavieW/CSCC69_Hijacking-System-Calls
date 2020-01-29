@@ -251,10 +251,10 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
-	pthread_mutex_lock(&calltable_lock);
+	spinlock_lock(&calltable_lock);
 	del_pid(current->pid);
 	orig_exit_group(status);
-	pthread_mutex_unlock(&calltable_lock);
+	spinlock_unlock(&calltable_lock);
 }
 //----------------------------------------------------------------
 
