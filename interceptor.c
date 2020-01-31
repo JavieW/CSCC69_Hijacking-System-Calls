@@ -380,17 +380,18 @@ static int init_function(void) {
 	spin_lock(&pidlist_lock);
 	int s;
 	for(s = 1; s < NR_syscalls; s++) {
-		mytable my_table = table[s];
-		my_table.f = NULL;
-		my_table.intercepted = 0;
-		my_table.monitored = 0;
-		my_table.listcount = 0;
 		// initialize my_list with dummy head
 		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
 		if (!ple)
 			return -ENOMEM;
 		INIT_LIST_HEAD(&ple->list);	
 		ple->pid = -1;
+		
+		mytable my_table = table[s];
+		my_table.f = NULL;
+		my_table.intercepted = 0;
+		my_table.monitored = 0;
+		my_table.listcount = 0;
 		my_table.my_list = ple->list;
 	}
 	spin_unlock(&pidlist_lock);
