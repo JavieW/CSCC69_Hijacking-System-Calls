@@ -278,16 +278,21 @@ void my_exit_group(int status)
  * - Don't forget to call the original system call, so we allow processes to proceed as normal.
  */
 asmlinkage long interceptor(struct pt_regs reg) {
-
-	// check if is monitored, later....
-
-	// log system call parameters
-	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
-
-	// call original system call
-	// Org: table[reg.ax](reg);
-	table[reg.ax].f(reg);
-
+	int match;
+	spin_lock(&calltable_lock);
+	if (table[reg.ax].monitored > 0) {
+		// if it is one, check the my_list
+		if (table[reg.ax].monitored == 1) {
+			i = check_pid_monitored(reg.ax, current->pid);
+		}
+		if (table[reg.ax].monitored == 2 || match == 1) {
+			// log system call parameters
+			log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
+			// call original system call
+			table[reg.ax].f(reg);
+		}
+	}
+	spin_unlock(&calltable_lock);
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
 
