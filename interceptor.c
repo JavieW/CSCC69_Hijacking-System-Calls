@@ -388,7 +388,7 @@ static int init_function(void) {
 		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
 		INIT_LIST_HEAD (&ple->list);
 		ple->pid = -1;
-		my_table.my_list = ple;
+		my_table.my_list = ple->list;
 	}
 	spin_unlock(&pidlist_lock);
 	return 0;
