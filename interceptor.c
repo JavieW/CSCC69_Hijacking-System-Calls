@@ -285,7 +285,8 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 
 	// call original system call
-	table[reg.ax](reg);
+	// table[reg.ax](reg);
+	table[reg.ax].f(reg);
 
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
