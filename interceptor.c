@@ -71,6 +71,7 @@ typedef struct {
 	/* List of monitored PIDs */
 	int listcount;
 	struct list_head my_list;
+
 }mytable;
 
 /* An entry for each system call */
@@ -251,10 +252,10 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
-	spin_lock(&calltable_lock);
+	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
 	orig_exit_group(status);
-	spin_unlock(&calltable_lock);
+	spin_unlock(&pidlist_lock);
 }
 //----------------------------------------------------------------
 
@@ -335,8 +336,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   you might be holding, before you exit the function (including error cases!).  
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
-
-
+	
 
 
 
@@ -367,12 +367,30 @@ long (*orig_custom_syscall)(void);
  */
 static int init_function(void) {
 
+	// Hijack MY_CUSTOM_SYSCALL and exit_group
+	spin_lock(&calltable_lock);
+	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
+	orig_exit_group = sys_call_table[__NR_exit_group];
+	set_addr_rw((unsigned long)sys_call_table);
+	sys_call_table[MY_CUSTOM_SYSCALL] = my_syscall;
+	sys_call_table[__NR_exit_group] = my_exit_group;
+	spin_unlock(&calltable_lock);
 
-
-
-
-
-
+	// initializations to table 
+	spin_lock(&pidlist_lock);
+	for(s = 1; s < NR_syscalls; s++) {
+		mytable my_table = table[s];
+		my_table->f = NULL; //??? syntax
+		my_table.intercepted = 0;
+		my_table.mointored = 0;
+		my_table.count = 0;
+		// initialize my_list with dummy head
+		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
+		INIT_LIST_HEAD (&ple->list);
+		ple->pid = -1;
+		my_table.my_list = ple;
+	}
+	spin_unlock(&pidlist_lock);
 	return 0;
 }
 
