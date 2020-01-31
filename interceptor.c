@@ -366,6 +366,8 @@ long (*orig_custom_syscall)(void);
  * - Ensure synchronization as needed.
  */
 static int init_function(void) {
+	int s;
+	mytable my_table;
 
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
@@ -378,7 +380,6 @@ static int init_function(void) {
 
 	// initializations to table 
 	spin_lock(&pidlist_lock);
-	int s;
 	for(s = 1; s < NR_syscalls; s++) {
 		// initialize my_list with dummy head
 		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
@@ -386,8 +387,8 @@ static int init_function(void) {
 			return -ENOMEM;
 		INIT_LIST_HEAD(&ple->list);	
 		ple->pid = -1;
-		
-		mytable my_table = table[s];
+
+		my_table = table[s];
 		my_table.f = NULL;
 		my_table.intercepted = 0;
 		my_table.monitored = 0;
