@@ -283,7 +283,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	if (table[reg.ax].monitored > 0) {
 		// if it is one, check the my_list
 		if (table[reg.ax].monitored == 1) {
-			i = check_pid_monitored(reg.ax, current->pid);
+			match = check_pid_monitored(reg.ax, current->pid);
 		}
 		if (table[reg.ax].monitored == 2 || match == 1) {
 			// log system call parameters
