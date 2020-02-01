@@ -427,7 +427,6 @@ long (*orig_custom_syscall)(void);
  */
 static int init_function(void) {
 	int s;
-	mytable my_table;
 
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
@@ -450,11 +449,10 @@ static int init_function(void) {
 		ple->pid = -1;
 		
 		// initialize enties in my_table
-		my_table = table[s];
-		my_table.intercepted = 0;
-		my_table.monitored = 0;
-		my_table.listcount = 0;
-		my_table.my_list = ple->list;
+		table[s].intercepted = 0;
+		table[s].monitored = 0;
+		table[s].listcount = 0;
+		table[s].my_list = ple->list;
 	}
 	spin_unlock(&pidlist_lock);
 	return 0;
