@@ -426,6 +426,8 @@ static int init_function(void) {
 	int s;
 	mytable my_table;
 
+	printk("I'm initializing...");
+
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
 	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
