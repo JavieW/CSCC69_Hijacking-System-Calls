@@ -354,10 +354,9 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		// only root user can perform this cmd
 		if (!root) 
 			return -EPERM;
-		// intercepting an intercepted cmd
+		// intercepting an intercepted syscall
 		if (table[syscall].intercepted == 1)
 			return -EBUSY;
-
 		spin_lock(&calltable_lock);
 		spin_lock(&pidlist_lock);
 		// store original system call
@@ -365,38 +364,78 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		// set status to be intercepted
 		table[syscall].intercepted = 1;
 		spin_unlock(&pidlist_lock);
-
 		set_addr_rw((unsigned long)sys_call_table);
 		// replace with generic interceptor
 		sys_call_table[syscall] = interceptor;
 		set_addr_ro((unsigned long)sys_call_table);
 		spin_unlock(&calltable_lock);
+
 	} else if (cmd == REQUEST_SYSCALL_RELEASE) {
 		// only root user can perform this cmd
 		if (!root)
 			return -EPERM;
-		// de-intercepting a non-intercepted cmd
+		// de-intercepting a non-intercepted syscall
 		if (table[syscall].intercepted == 0)
 		 	return -EINVAL;
-		
 		spin_lock(&pidlist_lock);
 		spin_lock(&calltable_lock);
 		// restore orignal system call
 		set_addr_rw((unsigned long)sys_call_table);
 		sys_call_table[syscall] = table[syscall].f;
 		set_addr_ro((unsigned long)sys_call_table);
-		// set status to be non-intercepted
+		// clear the list of monitored pids of syscall
+		destroy_list(syscall);
 		spin_unlock(&calltable_lock);
 		spin_unlock(&pidlist_lock);
 
+	} else if (cmd == REQUEST_START_MONITORING) {
+		// if pid < 0
+		if (pid < 0)
+			return -EINVAL;
+		// if it is root
+		else if (pid == 0) {
+			if (root) {
+				spin_lock(&pidlist_lock);
+				table[syscall].monitored = 2;
+				spin_unlock(&pidlist_lock);
+			} else {
+				return -EPERM;
+			}
+		} else {
+			if (pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
+				return -EINVAL;
+			else
+			{
+				if (check_pid_from_list(pid, current->pid) == -EPERM)
+					return -EPERM;
+				else {
+					// if the pid is not in the list of syscall yet
+					if (!check_pid_monitored(syscall, pid)) {
+						int check;
+						spin_lock(&pidlist_lock);
+						table[syscall].monitored = 1;
+						check = add_pid_sysc(current->pid, syscall);
+						spin_unlock(&pidlist_lock);
+						if (check == -ENOMEM)
+							return -ENOMEM;
+					}
+				}
+				
+			}	
+		}
 
-	// } else if (cmd == REQUEST_START_MONITORING) {
-	// 	if (pid==0 && !root)
-	// 		return -EPERM;
-	// 	// ignore checking for now
+	} else if (cmd == REQUEST_STOP_MONITORING) {
+		// Cannot stop monitoring for a pid that is not being monitored, or if the 
+        // system call has not been intercepted yet.
+		if (pid == 0 && !root || check_pid_from_list(pid, current->pid) == -EPERM)
+			return -EPERM;
+		//else, remove the pid from the list of the syscall
+		else {
+			spin_lock(&pidlist_lock);
+			del_pid_sysc(current->pid, syscall);
+			spin_unlock(&pidlist_lock);
+		}
 
-	// } else if (cmd == REQUEST_STOP_MONITORING) {
-	// 	// ignore checking for now
 	} else {
 		return -EINVAL;
 	}
@@ -439,7 +478,7 @@ static int init_function(void) {
 
 	// initializations of table 
 	spin_lock(&pidlist_lock);
-	for(s = 1; s < NR_syscalls; s++) {
+	for(s = 1; s <= NR_syscalls; s++) {
 		// initialize enties in my_table
 		table[s].intercepted = 0;
 		table[s].monitored = 0;
