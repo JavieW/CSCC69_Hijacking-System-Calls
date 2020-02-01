@@ -285,7 +285,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 
 	// call original system call
-	table[reg.ax](reg);
+	table[reg.ax].f(reg);
 
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
@@ -345,7 +345,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	// check validation of arguments and root user
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
-	if (pid != 0 && pid_task(find_vpid(pid1), PIDTYPE_PID) == NULL)
+	if (pid != 0 && pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
 		return -EINVAL;
 	root = !current_uid();
 
