@@ -252,10 +252,10 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
-	//spin_lock(&pidlist_lock);
+	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	(*orig_exit_group)(status);
-	//spin_unlock(&pidlist_lock);
+	(orig_exit_group)(status);
+	spin_unlock(&pidlist_lock);
 }
 //----------------------------------------------------------------
 
