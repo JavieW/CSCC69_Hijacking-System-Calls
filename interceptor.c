@@ -369,7 +369,6 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		sys_call_table[syscall] = interceptor;
 		set_addr_ro((unsigned long)sys_call_table);
 		spin_unlock(&calltable_lock);
-
 	} else if (cmd == REQUEST_SYSCALL_RELEASE) {
 		// only root user can perform this cmd
 		if (!root)
@@ -435,7 +434,6 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			del_pid_sysc(current->pid, syscall);
 			spin_unlock(&pidlist_lock);
 		}
-
 	} else {
 		return -EINVAL;
 	}
