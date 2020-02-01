@@ -476,7 +476,7 @@ static int init_function(void) {
 
 	// initializations of table 
 	spin_lock(&pidlist_lock);
-	for(s = 1; s <= NR_syscalls; s++) {
+	for(s = 0; s <= NR_syscalls; s++) {
 		// initialize enties in my_table
 		table[s].intercepted = 0;
 		table[s].monitored = 0;
