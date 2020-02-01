@@ -254,7 +254,7 @@ void my_exit_group(int status)
 {
 	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	(*orig_exit_group)(status);
+	orig_exit_group(status);
 	spin_unlock(&pidlist_lock);
 }
 //----------------------------------------------------------------
@@ -348,7 +348,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid)
 		return -EINVAL;
 	if (pid != 0 && pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
 		return -EINVAL;
-	root = !current_uid();
+	root = (current_uid() == 0);
 
 	// handling four kind of cmds
 	if (cmd == REQUEST_SYSCALL_INTERCEPT) {
