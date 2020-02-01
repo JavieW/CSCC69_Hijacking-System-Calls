@@ -450,7 +450,6 @@ static int init_function(void) {
 		
 		// initialize enties in my_table
 		my_table = table[s];
-		my_table.f = NULL;
 		my_table.intercepted = 0;
 		my_table.monitored = 0;
 		my_table.listcount = 0;
