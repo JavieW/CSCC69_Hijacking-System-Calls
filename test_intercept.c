@@ -119,9 +119,13 @@ int main(int argc, char **argv) {
 	if (argc>1 && strcmp(argv[1], "nonroot") == 0)
 		return do_nonroot(atoi(argv[2]));
 	
-	printf("It is working. \n");
-/*
+	printf("It is working");
+
 	test("insmod interceptor.ko %s", "", system("insmod interceptor.ko") == 0);
+
+	
+/*
+	
 	test("bad MY_CUSTOM_SYSCALL args%s", "",  vsyscall_arg(MY_CUSTOM_SYSCALL, 3, 100, 0, 0) == -EINVAL);
 	do_intercept(MY_CUSTOM_SYSCALL, -EINVAL);
 	do_release(MY_CUSTOM_SYSCALL, -EINVAL);
