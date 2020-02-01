@@ -424,16 +424,17 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		}
 
 	} else if (cmd == REQUEST_STOP_MONITORING) {
-		// Cannot stop monitoring for a pid that is not being monitored, or if the 
-        // system call has not been intercepted yet.
-		if (pid == 0 && !root || check_pid_from_list(pid, current->pid) == -EPERM)
+		// -EPERM case
+		if ((pid == 0 && !root) || check_pid_from_list(pid, current->pid) == -EPERM) {
 			return -EPERM;
-		//else, remove the pid from the list of the syscall
-		else {
-			spin_lock(&pidlist_lock);
-			del_pid_sysc(current->pid, syscall);
-			spin_unlock(&pidlist_lock);
 		}
+		// -EINVAL case
+		if (check_pid_monitored(syscall, pid) == 0) {
+			return -EINVAL;
+		}
+		spin_lock(&pidlist_lock);
+		del_pid_sysc(syscall, pid);
+		spin_unlock(&pidlist_lock);
 	} else {
 		return -EINVAL;
 	}
