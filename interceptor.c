@@ -339,7 +339,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   to the system call table and the lists of monitored pids. Be careful to unlock any spinlocks 
  *   you might be holding, before you exit the function (including error cases!).  
  */
-asmlinkage long my_syscall(int cmd, int syscall, int pid) 
+asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 	int root; // is 0 if not a root user, o/w is a root user
 	printk("Running my_syscall...");
