@@ -339,11 +339,10 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   to the system call table and the lists of monitored pids. Be careful to unlock any spinlocks 
  *   you might be holding, before you exit the function (including error cases!).  
  */
-asmlinkage long my_syscall(int cmd, int syscall, int pid) {
-	printk("Running my_syscall...");
+asmlinkage long my_syscall(int cmd, int syscall, int pid) 
 
 	int root; // is 0 if not a root user, o/w is a root user
-
+	printk("Running my_syscall...");
 	// check validation of arguments and root user
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
@@ -441,15 +440,16 @@ static int init_function(void) {
 	// initializations of table 
 	spin_lock(&pidlist_lock);
 	for(s = 1; s < NR_syscalls; s++) {
-		// initialize my_list with dummy head
-		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
-		if (!ple)
-			return -ENOMEM;
-		INIT_LIST_HEAD(&ple->list);	
-		ple->pid = -1;
+		// // initialize my_list with dummy head
+		// struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
+		// if (!ple)
+		// 	return -ENOMEM;
+		// INIT_LIST_HEAD(&ple->list);	
+		// ple->pid = -1;
 		
 		// initialize enties in my_table
 		my_table = table[s];
+		INIT_LIST_HEAD(&my_table.my_list);
 		my_table.intercepted = 0;
 		my_table.monitored = 0;
 		my_table.listcount = 0;
