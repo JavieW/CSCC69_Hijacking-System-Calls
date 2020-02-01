@@ -453,7 +453,7 @@ static int init_function(void) {
 		my_table.intercepted = 0;
 		my_table.monitored = 0;
 		my_table.listcount = 0;
-		my_table.my_list = ple->list;
+		// my_table.my_list = ple->list;
 	}
 	spin_unlock(&pidlist_lock);
 	return 0;
