@@ -254,7 +254,7 @@ void my_exit_group(int status)
 {
 	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	orig_exit_group(status);
+	(*orig_exit_group)(status);
 	spin_unlock(&pidlist_lock);
 }
 //----------------------------------------------------------------
@@ -368,7 +368,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 		set_addr_rw((unsigned long)sys_call_table);
 		// replace with generic interceptor
-		sys_call_table[syscall] = interceptor;
+		sys_call_table[syscall] = &interceptor;
 		set_addr_ro((unsigned long)sys_call_table);
 		spin_unlock(&calltable_lock);
 	} else if (cmd == REQUEST_SYSCALL_RELEASE) {
@@ -433,8 +433,8 @@ static int init_function(void) {
 	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
 	orig_exit_group = sys_call_table[__NR_exit_group];
 	set_addr_rw((unsigned long)sys_call_table);
-	sys_call_table[MY_CUSTOM_SYSCALL] = my_syscall;
-	sys_call_table[__NR_exit_group] = my_exit_group;
+	sys_call_table[MY_CUSTOM_SYSCALL] = &my_syscall;
+	sys_call_table[__NR_exit_group] = &my_exit_group;
 	set_addr_ro((unsigned long)sys_call_table);
 	spin_unlock(&calltable_lock);
 
@@ -447,7 +447,8 @@ static int init_function(void) {
 			return -ENOMEM;
 		INIT_LIST_HEAD(&ple->list);	
 		ple->pid = -1;
-
+		
+		// initialize enties in my_table
 		my_table = table[s];
 		my_table.f = NULL;
 		my_table.intercepted = 0;
