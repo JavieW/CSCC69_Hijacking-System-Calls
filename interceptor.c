@@ -94,52 +94,52 @@ spinlock_t calltable_lock = SPIN_LOCK_UNLOCKED;
  * Add a pid to a syscall's list of monitored pids. 
  * Returns -ENOMEM if the operation is unsuccessful.
  */
-static int add_pid_sysc(pid_t pid, int sysc)
-{
-	struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
+// static int add_pid_sysc(pid_t pid, int sysc)
+// {
+// 	struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
 
-	if (!ple)
-		return -ENOMEM;
+// 	if (!ple)
+// 		return -ENOMEM;
 
-	INIT_LIST_HEAD(&ple->list);
-	ple->pid=pid;
+// 	INIT_LIST_HEAD(&ple->list);
+// 	ple->pid=pid;
 
-	list_add(&ple->list, &(table[sysc].my_list));
-	table[sysc].listcount++;
+// 	list_add(&ple->list, &(table[sysc].my_list));
+// 	table[sysc].listcount++;
 
-	return 0;
-}
+// 	return 0;
+// }
 
 /**
  * Remove a pid from a system call's list of monitored pids.
  * Returns -EINVAL if no such pid was found in the list.
  */
-static int del_pid_sysc(pid_t pid, int sysc)
-{
-	struct list_head *i;
-	struct pid_list *ple;
+// static int del_pid_sysc(pid_t pid, int sysc)
+// {
+// 	struct list_head *i;
+// 	struct pid_list *ple;
 
-	list_for_each(i, &(table[sysc].my_list)) {
+// 	list_for_each(i, &(table[sysc].my_list)) {
 
-		ple=list_entry(i, struct pid_list, list);
-		if(ple->pid == pid) {
+// 		ple=list_entry(i, struct pid_list, list);
+// 		if(ple->pid == pid) {
 
-			list_del(i);
-			kfree(ple);
+// 			list_del(i);
+// 			kfree(ple);
 
-			table[sysc].listcount--;
-			/* If there are no more pids in sysc's list of pids, then
-			 * stop the monitoring only if it's not for all pids (monitored=2) */
-			if(table[sysc].listcount == 0 && table[sysc].monitored == 1) {
-				table[sysc].monitored = 0;
-			}
+// 			table[sysc].listcount--;
+// 			/* If there are no more pids in sysc's list of pids, then
+// 			 * stop the monitoring only if it's not for all pids (monitored=2) */
+// 			if(table[sysc].listcount == 0 && table[sysc].monitored == 1) {
+// 				table[sysc].monitored = 0;
+// 			}
 
-			return 0;
-		}
-	}
+// 			return 0;
+// 		}
+// 	}
 
-	return -EINVAL;
-}
+// 	return -EINVAL;
+// }
 
 /**
  * Remove a pid from all the lists of monitored pids (for all intercepted syscalls).
@@ -179,21 +179,21 @@ static int del_pid(pid_t pid)
 /**
  * Clear the list of monitored pids for a specific syscall.
  */
-static void destroy_list(int sysc) {
+// static void destroy_list(int sysc) {
 
-	struct list_head *i, *n;
-	struct pid_list *ple;
+// 	struct list_head *i, *n;
+// 	struct pid_list *ple;
 
-	list_for_each_safe(i, n, &(table[sysc].my_list)) {
+// 	list_for_each_safe(i, n, &(table[sysc].my_list)) {
 
-		ple=list_entry(i, struct pid_list, list);
-		list_del(i);
-		kfree(ple);
-	}
+// 		ple=list_entry(i, struct pid_list, list);
+// 		list_del(i);
+// 		kfree(ple);
+// 	}
 
-	table[sysc].listcount = 0;
-	table[sysc].monitored = 0;
-}
+// 	table[sysc].listcount = 0;
+// 	table[sysc].monitored = 0;
+// }
 
 /**
  * Check if two pids have the same owner - useful for checking if a pid 
@@ -201,33 +201,33 @@ static void destroy_list(int sysc) {
  * Remember that when requesting to start monitoring for a pid, only the 
  * owner of that pid is allowed to request that.
  */
-static int check_pid_from_list(pid_t pid1, pid_t pid2) {
+// static int check_pid_from_list(pid_t pid1, pid_t pid2) {
 
-	struct task_struct *p1 = pid_task(find_vpid(pid1), PIDTYPE_PID);
-	struct task_struct *p2 = pid_task(find_vpid(pid2), PIDTYPE_PID);
-	if(p1->real_cred->uid != p2->real_cred->uid)
-		return -EPERM;
-	return 0;
-}
+// 	struct task_struct *p1 = pid_task(find_vpid(pid1), PIDTYPE_PID);
+// 	struct task_struct *p2 = pid_task(find_vpid(pid2), PIDTYPE_PID);
+// 	if(p1->real_cred->uid != p2->real_cred->uid)
+// 		return -EPERM;
+// 	return 0;
+// }
 
-/**
- * Check if a pid is already being monitored for a specific syscall.
- * Returns 1 if it already is, or 0 if pid is not in sysc's list.
- */
-static int check_pid_monitored(int sysc, pid_t pid) {
+// /**
+//  * Check if a pid is already being monitored for a specific syscall.
+//  * Returns 1 if it already is, or 0 if pid is not in sysc's list.
+//  */
+// static int check_pid_monitored(int sysc, pid_t pid) {
 
-	struct list_head *i;
-	struct pid_list *ple;
+// 	struct list_head *i;
+// 	struct pid_list *ple;
 
-	list_for_each(i, &(table[sysc].my_list)) {
+// 	list_for_each(i, &(table[sysc].my_list)) {
 
-		ple=list_entry(i, struct pid_list, list);
-		if(ple->pid == pid) 
-			return 1;
+// 		ple=list_entry(i, struct pid_list, list);
+// 		if(ple->pid == pid) 
+// 			return 1;
 		
-	}
-	return 0;	
-}
+// 	}
+// 	return 0;	
+// }
 //----------------------------------------------------------------
 
 //----- Intercepting exit_group ----------------------------------
@@ -394,8 +394,10 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	// } else if (cmd == REQUEST_START_MONITORING) {
 	// 	if (pid==0 && !root)
 	// 		return -EPERM;
+	// 	// ignore checking for now
+
 	// } else if (cmd == REQUEST_STOP_MONITORING) {
-	// 	//
+	// 	// ignore checking for now
 	} else {
 		return -EINVAL;
 	}
