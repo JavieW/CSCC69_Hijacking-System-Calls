@@ -71,6 +71,7 @@ typedef struct {
 	/* List of monitored PIDs */
 	int listcount;
 	struct list_head my_list;
+
 }mytable;
 
 /* An entry for each system call */
@@ -251,10 +252,10 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
-	pthread_mutex_lock(&calltable_lock);
+	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
+	spin_unlock(&pidlist_lock);
 	orig_exit_group(status);
-	pthread_mutex_unlock(&calltable_lock);
 }
 //----------------------------------------------------------------
 
@@ -278,9 +279,13 @@ void my_exit_group(int status)
  */
 asmlinkage long interceptor(struct pt_regs reg) {
 
+	// check if is monitored, later....
 
+	// log system call parameters
+	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 
-
+	// call original system call
+	table[reg.ax].f(reg);
 
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
@@ -336,11 +341,66 @@ asmlinkage long interceptor(struct pt_regs reg) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
+	int root; // is 0 if not a root user, o/w is a root user
+	printk("Running my_syscall...");
+	// check validation of arguments and root user
+	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
+		return -EINVAL;
+	if (pid != 0 && pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
+		return -EINVAL;
+	root = (current_uid() == 0);
+
+	// handling four kind of cmds
+	if (cmd == REQUEST_SYSCALL_INTERCEPT) {
+		// only root user can perform this cmd
+		if (!root) 
+			return -EPERM;
+		// intercepting an intercepted cmd
+		if (table[syscall].intercepted == 1)
+			return -EBUSY;
+
+		spin_lock(&calltable_lock);
+		spin_lock(&pidlist_lock);
+		// store original system call
+		table[syscall].f = sys_call_table[syscall];
+		// set status to be intercepted
+		table[syscall].intercepted = 1;
+		spin_unlock(&pidlist_lock);
+
+		set_addr_rw((unsigned long)sys_call_table);
+		// replace with generic interceptor
+		sys_call_table[syscall] = interceptor;
+		set_addr_ro((unsigned long)sys_call_table);
+		spin_unlock(&calltable_lock);
+	} else if (cmd == REQUEST_SYSCALL_RELEASE) {
+		// only root user can perform this cmd
+		if (!root)
+			return -EPERM;
+		// de-intercepting a non-intercepted cmd
+		if (table[syscall].intercepted == 0)
+		 	return -EINVAL;
+		
+		spin_lock(&pidlist_lock);
+		spin_lock(&calltable_lock);
+		// restore orignal system call
+		set_addr_rw((unsigned long)sys_call_table);
+		sys_call_table[syscall] = table[syscall].f;
+		set_addr_ro((unsigned long)sys_call_table);
+		// set status to be non-intercepted
+		spin_unlock(&calltable_lock);
+		spin_unlock(&pidlist_lock);
 
 
+	// } else if (cmd == REQUEST_START_MONITORING) {
+	// 	if (pid==0 && !root)
+	// 		return -EPERM;
+	// 	// ignore checking for now
 
-
-
+	// } else if (cmd == REQUEST_STOP_MONITORING) {
+	// 	// ignore checking for now
+	} else {
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -366,13 +426,29 @@ long (*orig_custom_syscall)(void);
  * - Ensure synchronization as needed.
  */
 static int init_function(void) {
+	int s;
 
+	// Hijack MY_CUSTOM_SYSCALL and exit_group
+	spin_lock(&calltable_lock);
+	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
+	orig_exit_group = sys_call_table[__NR_exit_group];
+	set_addr_rw((unsigned long)sys_call_table);
+	sys_call_table[MY_CUSTOM_SYSCALL] = my_syscall;
+	sys_call_table[__NR_exit_group] = my_exit_group;
+	set_addr_ro((unsigned long)sys_call_table);
+	spin_unlock(&calltable_lock);
 
-
-
-
-
-
+	// initializations of table 
+	spin_lock(&pidlist_lock);
+	for(s = 1; s < NR_syscalls; s++) {
+		// initialize enties in my_table
+		table[s].intercepted = 0;
+		table[s].monitored = 0;
+		table[s].listcount = 0;
+		INIT_LIST_HEAD(&table[s].my_list);
+	}
+	spin_unlock(&pidlist_lock);
+	
 	return 0;
 }
 
@@ -389,10 +465,13 @@ static int init_function(void) {
 static void exit_function(void)
 {        
 
-
-
-
-
+	// restore to original syscall
+	spin_lock(&calltable_lock);
+	set_addr_rw((unsigned long)sys_call_table);
+	sys_call_table[MY_CUSTOM_SYSCALL] = orig_custom_syscall;
+	sys_call_table[__NR_exit_group] = orig_exit_group;
+	set_addr_ro((unsigned long)sys_call_table);
+	spin_unlock(&calltable_lock);
 
 }
 
