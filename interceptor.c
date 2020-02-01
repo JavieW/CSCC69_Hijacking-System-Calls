@@ -254,8 +254,8 @@ void my_exit_group(int status)
 {
 	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	orig_exit_group(status);
 	spin_unlock(&pidlist_lock);
+	orig_exit_group(status);
 }
 //----------------------------------------------------------------
 
@@ -340,14 +340,15 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   you might be holding, before you exit the function (including error cases!).  
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
-	int root; // is 0 if not a root user, o/w is a root user
 
+	int root; // is 0 if not a root user, o/w is a root user
+	printk("Running my_syscall...");
 	// check validation of arguments and root user
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
 	if (pid != 0 && pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
 		return -EINVAL;
-	root = !current_uid();
+	root = (current_uid() == 0);
 
 	// handling four kind of cmds
 	if (cmd == REQUEST_SYSCALL_INTERCEPT) {
@@ -393,8 +394,10 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	// } else if (cmd == REQUEST_START_MONITORING) {
 	// 	if (pid==0 && !root)
 	// 		return -EPERM;
+	// 	// ignore checking for now
+
 	// } else if (cmd == REQUEST_STOP_MONITORING) {
-	// 	//
+	// 	// ignore checking for now
 	} else {
 		return -EINVAL;
 	}
@@ -424,9 +427,6 @@ long (*orig_custom_syscall)(void);
  */
 static int init_function(void) {
 	int s;
-	mytable my_table;
-
-	//printk("I'm initializing...");
 
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
@@ -441,21 +441,14 @@ static int init_function(void) {
 	// initializations of table 
 	spin_lock(&pidlist_lock);
 	for(s = 1; s < NR_syscalls; s++) {
-		// initialize my_list with dummy head
-		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
-		if (!ple)
-			return -ENOMEM;
-		INIT_LIST_HEAD(&ple->list);	
-		ple->pid = -1;
-
-		my_table = table[s];
-		my_table.f = NULL;
-		my_table.intercepted = 0;
-		my_table.monitored = 0;
-		my_table.listcount = 0;
-		my_table.my_list = ple->list;
+		// initialize enties in my_table
+		table[s].intercepted = 0;
+		table[s].monitored = 0;
+		table[s].listcount = 0;
+		INIT_LIST_HEAD(&table[s].my_list);
 	}
 	spin_unlock(&pidlist_lock);
+	
 	return 0;
 }
 
