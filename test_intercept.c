@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 
 	if (argc>1 && strcmp(argv[1], "nonroot") == 0)
 		return do_nonroot(atoi(argv[2]));
-
+/*
 	test("insmod interceptor.ko %s", "", system("insmod interceptor.ko") == 0);
 	test("bad MY_CUSTOM_SYSCALL args%s", "",  vsyscall_arg(MY_CUSTOM_SYSCALL, 3, 100, 0, 0) == -EINVAL);
 	do_intercept(MY_CUSTOM_SYSCALL, -EINVAL);
@@ -130,12 +130,15 @@ int main(int argc, char **argv) {
 	do_release(__NR_exit, 0);
 
 	test_syscall(SYS_open);
+*/
+
 	/* The above line of code tests SYS_open.
 	   Feel free to add more tests here for other system calls, 
 	   once you get everything to work; check Linux documentation
 	   for other syscall number definitions.  */
-
+/*
 	test("rmmod interceptor.ko %s", "", system("rmmod interceptor") == 0);
+*/
 	return 0;
 }
 
