@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 	
 	printf("It is working");
 
-	test("insmod interceptor.ko %s", "", system("insmod interceptor.ko") == 0);
+	test("bad MY_CUSTOM_SYSCALL args%s", "",  vsyscall_arg(MY_CUSTOM_SYSCALL, 3, 100, 0, 0) == -EINVAL);
 
 	
 /*
