@@ -254,8 +254,8 @@ void my_exit_group(int status)
 {
 	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	orig_exit_group(status);
 	spin_unlock(&pidlist_lock);
+	orig_exit_group(status);
 }
 //----------------------------------------------------------------
 
@@ -278,21 +278,15 @@ void my_exit_group(int status)
  * - Don't forget to call the original system call, so we allow processes to proceed as normal.
  */
 asmlinkage long interceptor(struct pt_regs reg) {
-	int match;
-	spin_lock(&calltable_lock);
-	if (table[reg.ax].monitored > 0) {
-		// if it is one, check the my_list
-		if (table[reg.ax].monitored == 1) {
-			match = check_pid_monitored(reg.ax, current->pid);
-		}
-		if (table[reg.ax].monitored == 2 || match == 1) {
-			// log system call parameters
-			log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
-			// call original system call
-			table[reg.ax].f(reg);
-		}
-	}
-	spin_unlock(&calltable_lock);
+
+	// check if is monitored, later....
+
+	// log system call parameters
+	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
+
+	// call original system call
+	table[reg.ax].f(reg);
+
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
 
@@ -483,3 +477,4 @@ static void exit_function(void)
 
 module_init(init_function);
 module_exit(exit_function);
+
