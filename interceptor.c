@@ -285,7 +285,6 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 
 	// call original system call
-	// Org: table[reg.ax](reg);
 	table[reg.ax].f(reg);
 
 	return 0; // Just a placeholder, so it compiles with no warnings!
@@ -341,12 +340,11 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   you might be holding, before you exit the function (including error cases!).  
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
-	int root;
-	
+	int root; // is 0 if not a root user, o/w is a root user
+
 	// check validation of arguments and root user
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
-	// org: if (pid != 0 && pid_task(find_vpid(pid1), PIDTYPE_PID) == NULL)
 	if (pid != 0 && pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)
 		return -EINVAL;
 	root = !current_uid();
@@ -427,6 +425,8 @@ long (*orig_custom_syscall)(void);
 static int init_function(void) {
 	int s;
 	mytable my_table;
+
+	printk("I'm initializing...");
 
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
