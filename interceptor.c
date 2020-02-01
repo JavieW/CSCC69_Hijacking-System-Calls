@@ -441,20 +441,14 @@ static int init_function(void) {
 	// initializations of table 
 	spin_lock(&pidlist_lock);
 	for(s = 1; s < NR_syscalls; s++) {
-		// initialize my_list with dummy head
-		struct pid_list *ple=(struct pid_list*)kmalloc(sizeof(struct pid_list), GFP_KERNEL);
-		if (!ple)
-			return -ENOMEM;
-		INIT_LIST_HEAD(&ple->list);	
-		ple->pid = -1;
-		
 		// initialize enties in my_table
 		table[s].intercepted = 0;
 		table[s].monitored = 0;
 		table[s].listcount = 0;
-		table[s].my_list = ple->list;
+		INIT_LIST_HEAD(&table[s].my_list);
 	}
 	spin_unlock(&pidlist_lock);
+	
 	return 0;
 }
 
