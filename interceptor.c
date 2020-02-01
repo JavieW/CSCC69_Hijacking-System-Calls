@@ -340,6 +340,8 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *   you might be holding, before you exit the function (including error cases!).  
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
+	printk("Running my_syscall...");
+
 	int root; // is 0 if not a root user, o/w is a root user
 
 	// check validation of arguments and root user
@@ -368,7 +370,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 		set_addr_rw((unsigned long)sys_call_table);
 		// replace with generic interceptor
-		sys_call_table[syscall] = &interceptor;
+		sys_call_table[syscall] = interceptor;
 		set_addr_ro((unsigned long)sys_call_table);
 		spin_unlock(&calltable_lock);
 	} else if (cmd == REQUEST_SYSCALL_RELEASE) {
@@ -426,15 +428,13 @@ static int init_function(void) {
 	int s;
 	mytable my_table;
 
-	printk("I'm initializing...");
-
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
 	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
 	orig_exit_group = sys_call_table[__NR_exit_group];
 	set_addr_rw((unsigned long)sys_call_table);
-	sys_call_table[MY_CUSTOM_SYSCALL] = &my_syscall;
-	sys_call_table[__NR_exit_group] = &my_exit_group;
+	sys_call_table[MY_CUSTOM_SYSCALL] = my_syscall;
+	sys_call_table[__NR_exit_group] = my_exit_group;
 	set_addr_ro((unsigned long)sys_call_table);
 	spin_unlock(&calltable_lock);
 
