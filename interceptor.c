@@ -409,7 +409,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 1)
@@ -434,7 +434,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 0)
