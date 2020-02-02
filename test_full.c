@@ -181,10 +181,10 @@ void test_syscall(int syscall) {
 	// do_as_guest("./test_full start %d -1 %d", syscall, 0);
 	// do_stop(syscall, last_child, -EINVAL);
 	// do_release(syscall, 0);
-	do_intercept(10,0);
-	do_start(10, 20 ,0);
-	do_stop(10, 20, 0);
-	do_release(10,0);
+	do_intercept(400,0);
+	do_start(400, 20 ,0);
+	do_stop(400, 20, 0);
+	do_release(400,0);
 }
 
 
@@ -212,12 +212,12 @@ int main(int argc, char **argv) {
 
 	test("insmod interceptor.ko %s", "", system("insmod interceptor.ko") == 0);
 	test("bad MY_SYSCALL args%s", "",  vsyscall_arg(MY_CUSTOM_SYSCALL, 3, 100, 0, 0) == -EINVAL);
-	do_intercept(MY_CUSTOM_SYSCALL, -EINVAL);
-	do_release(MY_CUSTOM_SYSCALL, -EINVAL);
-	do_intercept(-1, -EINVAL);
-	do_release(-1, -EINVAL);
-	do_intercept(__NR_exit, 0);
-	do_release(__NR_exit, 0);
+	// do_intercept(MY_CUSTOM_SYSCALL, -EINVAL);
+	// do_release(MY_CUSTOM_SYSCALL, -EINVAL);
+	// do_intercept(-1, -EINVAL);
+	// do_release(-1, -EINVAL);
+	// do_intercept(__NR_exit, 0);
+	// do_release(__NR_exit, 0);
 
 	test_syscall(SYS_open);
 	/* The above line of code tests SYS_open.
