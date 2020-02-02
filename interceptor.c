@@ -286,11 +286,10 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	// log system call parameters IF is_monitored or monitor all
 	if((table[reg.ax].monitored == 1 && is_monitored) || (table[reg.ax].monitored == 2))
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
-	// call original system call
-	table[reg.ax].f(reg);
 	spin_unlock(&pidlist_lock);
 
-	return 0; // Just a placeholder, so it compiles with no warnings!
+	// call original system call and return out whatever original call will return
+	return table[reg.ax].f(reg);
 }
 
 /**
