@@ -177,9 +177,9 @@ void test_syscall(int syscall) {
 	do_stop(syscall, 0, 0);
 	do_start(syscall, 1, 0);
 	do_as_guest("./test_full stop %d 1 %d", syscall, -EPERM);
-	// do_stop(syscall, 1, 0);
+	do_stop(syscall, 1, 0);
 	do_as_guest("./test_full start %d -1 %d", syscall, 0);
-	// do_stop(syscall, last_child, -EINVAL);
+	do_stop(syscall, last_child, -EINVAL);
 	do_release(syscall, 0);
 }
 
