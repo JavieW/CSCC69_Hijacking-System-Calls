@@ -398,21 +398,50 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	}
 	else if (cmd == REQUEST_START_MONITORING)
 	{
-		// pid is 0 need root, other pid need at least the owner (-EPERM)
-		if ((!root && pid==0) || (!root && (check_pid_from_list(pid, current->pid) != 0)))
-			return -EPERM;
-		// cannot stop an non-monitored pid (-EBUSY)
-		if (check_pid_monitored(syscall, pid) == 1)
-			return -EBUSY;
+		if (pid==0){
+			// pid is 0 need root (-EPERM)
+			if (!root)
+				return -EPERM;
+			// monitor all pids
+			spin_lock(&pidlist_lock);
+			table[syscall].monitered = 2;
+			spin_unlock(&pidlist_lock);
+		} else {
+			// other pid need at least the owner (-EPERM)
+			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+				return -EPERM;
+			// cannot stop an non-monitored pid (-EBUSY)
+			if (check_pid_monitored(syscall, pid) == 1)
+				return -EBUSY;
+			// monitor the specific pid and handle -ENOMEM
+			if (add_pid_sysc((pid_t) pid, syscall) == -ENOMEM)
+				return -ENOMEM;
+			spin_lock(&pidlist_lock);
+			table[syscall].monitered = 1;
+			spin_unlock(&pidlist_lock);
+		}
 	}
 	else if (cmd == REQUEST_STOP_MONITORING)
 	{
-		// pid is 0 need root, other pid need at least the owner (-EPERM)
-		if ((!root && pid==0) || (!root && (check_pid_from_list(pid, current->pid) != 0)))
-			return -EPERM;
-		// cannot stop an non-monitored pid (-EINVAL)
-		if (check_pid_monitored(syscall, pid) == 0)
-			return -EINVAL;
+		if (pid==0){
+			// pid is 0 need root (-EPERM)
+			if (!root)
+				return -EPERM;
+			// monitor all pids
+			spin_lock(&pidlist_lock);
+			destroy_list(syscall);
+			spin_unlock(&pidlist_lock);
+		} else {
+			// other pid need at least the owner (-EPERM)
+			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+				return -EPERM;
+			// cannot stop an non-monitored pid (-EBUSY)
+			if (check_pid_monitored(syscall, pid) == 0)
+				return -EBUSY;
+			// monitor the specific pid and handle -ENOMEM
+			if (del_pid_sysc((pid_t) pid, syscall) == -EINVAL)
+				return -EINVAL;
+		}
 	}
 	else 
 	{
@@ -483,13 +512,21 @@ static int init_function(void) {
 static void exit_function(void)
 {        
 
-	// restore to original syscall
+	// restore MY_CUSTOM_SYSCALL and __NR_exit_group to original syscall
 	spin_lock(&calltable_lock);
 	set_addr_rw((unsigned long)sys_call_table);
 	sys_call_table[MY_CUSTOM_SYSCALL] = orig_custom_syscall;
 	sys_call_table[__NR_exit_group] = orig_exit_group;
 	set_addr_ro((unsigned long)sys_call_table);
 	spin_unlock(&calltable_lock);
+
+	// restore other intercepted syscalls to original syscalls
+	spin_lock(&pidlist_lock);
+	for(s = 0; s < NR_syscalls+1; s++) {
+		if ((s!=MY_CUSTOM_SYSCALL) && (s!=__NR_exit_group) && (table[s].intercepted))
+			sys_call_table[s] = table[s].f;
+	}
+	spin_unlock(&pidlist_lock);
 
 }
 
