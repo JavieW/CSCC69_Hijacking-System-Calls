@@ -168,7 +168,7 @@ int do_nonroot(int syscall) {
 
 void test_syscall(int syscall) {
 
-	clear_log();
+	// clear_log();
 	do_intercept(syscall, 0);
 	do_intercept(syscall, -EBUSY);
 	do_as_guest("./test_full nonroot %d", syscall, 0);
