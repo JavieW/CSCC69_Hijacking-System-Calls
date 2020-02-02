@@ -425,7 +425,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			// pid is 0 need root (-EPERM)
 			if (current_uid() != 0)
 				return -EPERM;
-			// monitor all pids
+			// stop monitor all pids
 			spin_lock(&pidlist_lock);
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
@@ -433,10 +433,10 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			// other pid need at least the owner (-EPERM)
 			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
-			// cannot stop an non-monitored pid (-EBUSY)
+			// cannot stop an non-monitored pid (-EINVAL)
 			if (check_pid_monitored(syscall, pid) == 0)
-				return -EBUSY;
-			// monitor the specific pid and handle -ENOMEM
+				return -EINVAL;
+			// cannot stop an pid that not existed
 			if (del_pid_sysc((pid_t) pid, syscall) == -EINVAL)
 				return -EINVAL;
 		}
