@@ -512,7 +512,8 @@ static int init_function(void) {
  */
 static void exit_function(void)
 {        
-
+	int s;
+	
 	// restore MY_CUSTOM_SYSCALL and __NR_exit_group to original syscall
 	spin_lock(&calltable_lock);
 	set_addr_rw((unsigned long)sys_call_table);
@@ -523,7 +524,7 @@ static void exit_function(void)
 
 	// restore other intercepted syscalls to original syscalls
 	spin_lock(&pidlist_lock);
-	for(int s = 0; s < NR_syscalls+1; s++) {
+	for(s = 0; s < NR_syscalls+1; s++) {
 		if ((s!=MY_CUSTOM_SYSCALL) && (s!=__NR_exit_group) && (table[s].intercepted))
 			sys_call_table[s] = table[s].f;
 	}
