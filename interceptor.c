@@ -429,15 +429,14 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			return -EPERM;
 		}
 		// -EINVAL case
-		if (check_pid_monitored(syscall, pid) == 0) {
+		if (check_pid_monitored(syscall, pid) == 0 || table[syscall].monitored == 0) {
 			return -EINVAL;
 		}
 		spin_lock(&pidlist_lock);
 		del_pid_sysc(syscall, pid);
 		spin_unlock(&pidlist_lock);
-		return 0;
 	}
-	return -EINVAL;
+	return 0;
 }
 
 /**
