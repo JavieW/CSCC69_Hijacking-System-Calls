@@ -425,7 +425,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 	} else if (cmd == REQUEST_STOP_MONITORING) {
 		// -EPERM case
-		if ((pid == 0 && !root) || check_pid_from_list(pid, current->pid) == -EPERM) {
+		if (!root && (pid == 0 || check_pid_from_list(pid, current->pid) == -EPERM)) {
 			return -EPERM;
 		}
 		// -EINVAL case
