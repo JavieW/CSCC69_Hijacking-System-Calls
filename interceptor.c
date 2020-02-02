@@ -279,9 +279,10 @@ void my_exit_group(int status) {
  */
 asmlinkage long interceptor(struct pt_regs reg) {
 
+	int is_monitored;
 	spin_lock(&pidlist_lock);
 	// check if is monitored
-	int is_monitored = check_pid_monitored(reg.ax, current->pid);
+	is_monitored = check_pid_monitored(reg.ax, current->pid);
 	// log system call parameters IF is_monitored or monitor all
 	if((table[reg.ax].monitored == 1 && is_monitored) || (table[reg.ax].monitored == 2))
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
@@ -522,7 +523,7 @@ static void exit_function(void)
 
 	// restore other intercepted syscalls to original syscalls
 	spin_lock(&pidlist_lock);
-	for(s = 0; s < NR_syscalls+1; s++) {
+	for(int s = 0; s < NR_syscalls+1; s++) {
 		if ((s!=MY_CUSTOM_SYSCALL) && (s!=__NR_exit_group) && (table[s].intercepted))
 			sys_call_table[s] = table[s].f;
 	}
