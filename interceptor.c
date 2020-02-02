@@ -344,10 +344,8 @@ asmlinkage long interceptor(struct pt_regs reg) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
-	int root;
-	spin_lock(&calltable_lock);
-	root = (current_uid() == 0);
-	spin_unlock(&calltable_lock);
+	int root = (current_uid() == 0);
+	printk("current:", current_uid());
 	// check validation of syscall (-EINVAL)
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
