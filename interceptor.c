@@ -404,7 +404,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				return -EPERM;
 			// monitor all pids
 			spin_lock(&pidlist_lock);
-			table[syscall].monitered = 2;
+			table[syscall].monitored = 2;
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
@@ -417,7 +417,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			if (add_pid_sysc((pid_t) pid, syscall) == -ENOMEM)
 				return -ENOMEM;
 			spin_lock(&pidlist_lock);
-			table[syscall].monitered = 1;
+			table[syscall].monitored = 1;
 			spin_unlock(&pidlist_lock);
 		}
 	}
