@@ -355,7 +355,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	if (cmd == REQUEST_SYSCALL_INTERCEPT)
 	{
 		// firt two cmds must be root (-EPERM)
-		if (current_uid().val != 0) 
+		if (current_uid() != 0) 
 			return -EPERM;
 		// intercepting an intercepted cmd (-EBUSY)
 		if (table[syscall].intercepted == 1)
@@ -378,7 +378,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	else if (cmd == REQUEST_SYSCALL_RELEASE)
 	{
 		// first two cmds must be root (-EPERM)
-		if (current_uid().val != 0)
+		if (current_uid() != 0)
 			return -EPERM;
 		// cannot de-intercepting a non-intercepted cmd (-EINVAL)
 		if (table[syscall].intercepted == 0)
@@ -399,7 +399,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	{
 		if (pid==0){
 			// pid is 0 need root (-EPERM)
-			if (current_uid().val != 0)
+			if (current_uid() != 0)
 				return -EPERM;
 			// monitor all pids
 			spin_lock(&pidlist_lock);
@@ -407,7 +407,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((current_uid().val != 0 && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 1)
@@ -424,7 +424,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	{
 		if (pid==0){
 			// pid is 0 need root (-EPERM)
-			if (current_uid().val != 0)
+			if (current_uid() != 0)
 				return -EPERM;
 			// monitor all pids
 			spin_lock(&pidlist_lock);
@@ -432,7 +432,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((current_uid().val != 0 && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 0)
