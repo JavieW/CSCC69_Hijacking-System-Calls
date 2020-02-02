@@ -345,6 +345,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 	int root = (current_uid() == 0);
+	printk("root: %d\n", root);
 
 	// check validation of syscall (-EINVAL)
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
@@ -513,7 +514,7 @@ static int init_function(void) {
 static void exit_function(void)
 {        
 	int s;
-	
+
 	// restore MY_CUSTOM_SYSCALL and __NR_exit_group to original syscall
 	spin_lock(&calltable_lock);
 	set_addr_rw((unsigned long)sys_call_table);
