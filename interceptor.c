@@ -286,11 +286,10 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	// log system call parameters IF is_monitored or monitor all
 	if((table[reg.ax].monitored == 1 && is_monitored) || (table[reg.ax].monitored == 2))
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
-	// call original system call
-	table[reg.ax].f(reg);
 	spin_unlock(&pidlist_lock);
 
-	return 0; // Just a placeholder, so it compiles with no warnings!
+	// call original system call and return out whatever original call will return
+	return table[reg.ax].f(reg);
 }
 
 /**
@@ -344,8 +343,6 @@ asmlinkage long interceptor(struct pt_regs reg) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
-	int root = (current->uid == 0);
-	printk("current: %d\n", current->uid);
 	// check validation of syscall (-EINVAL)
 	if (syscall < 0 || syscall > NR_syscalls || syscall == MY_CUSTOM_SYSCALL)
 		return -EINVAL;
@@ -357,7 +354,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	if (cmd == REQUEST_SYSCALL_INTERCEPT)
 	{
 		// firt two cmds must be root (-EPERM)
-		if (!root) 
+		if (current_uid() != 0) 
 			return -EPERM;
 		// intercepting an intercepted cmd (-EBUSY)
 		if (table[syscall].intercepted == 1)
@@ -380,7 +377,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	else if (cmd == REQUEST_SYSCALL_RELEASE)
 	{
 		// first two cmds must be root (-EPERM)
-		if (!root)
+		if (current_uid() != 0)
 			return -EPERM;
 		// cannot de-intercepting a non-intercepted cmd (-EINVAL)
 		if (table[syscall].intercepted == 0)
@@ -401,7 +398,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	{
 		if (pid==0){
 			// pid is 0 need root (-EPERM)
-			if (!root)
+			if (current_uid() != 0)
 				return -EPERM;
 			// monitor all pids
 			spin_lock(&pidlist_lock);
@@ -409,7 +406,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 1)
@@ -426,20 +423,20 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	{
 		if (pid==0){
 			// pid is 0 need root (-EPERM)
-			if (!root)
+			if (current_uid() != 0)
 				return -EPERM;
-			// monitor all pids
+			// stop monitor all pids
 			spin_lock(&pidlist_lock);
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
 		} else {
 			// other pid need at least the owner (-EPERM)
-			if ((!root && (check_pid_from_list(pid, current->pid) != 0)))
+			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
-			// cannot stop an non-monitored pid (-EBUSY)
+			// cannot stop an non-monitored pid (-EINVAL)
 			if (check_pid_monitored(syscall, pid) == 0)
-				return -EBUSY;
-			// monitor the specific pid and handle -ENOMEM
+				return -EINVAL;
+			// cannot stop an pid that not existed
 			if (del_pid_sysc((pid_t) pid, syscall) == -EINVAL)
 				return -EINVAL;
 		}
@@ -513,7 +510,7 @@ static int init_function(void) {
 static void exit_function(void)
 {        
 	int s;
-	
+
 	// restore MY_CUSTOM_SYSCALL and __NR_exit_group to original syscall
 	spin_lock(&calltable_lock);
 	set_addr_rw((unsigned long)sys_call_table);
