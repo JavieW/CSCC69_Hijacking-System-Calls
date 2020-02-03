@@ -391,6 +391,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		sys_call_table[syscall] = table[syscall].f;
 		set_addr_ro((unsigned long)sys_call_table);
 		// set status to be non-intercepted
+		table[syscall].intercepted = 0;
 		spin_unlock(&calltable_lock);
 		spin_unlock(&pidlist_lock);
 
