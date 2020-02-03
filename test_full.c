@@ -181,10 +181,10 @@ void test_syscall(int syscall) {
 	// do_as_guest("./test_full start %d -1 %d", syscall, 0);
 	// do_stop(syscall, last_child, -EINVAL);
 	// do_release(syscall, 0);
-	do_intercept(300,0);
-	do_start(300, 20 ,0);
-	do_stop(300, 20, 0);
-	do_release(300,0);
+	do_intercept(340,-EINVAL);
+	do_start(340, 20 ,-EINVAL);
+	do_stop(340, 20, -EINVAL);
+	do_release(340,-EINVAL);
 }
 
 
