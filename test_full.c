@@ -151,17 +151,17 @@ void do_as_guest(const char *str, int args1, int args2) {
 }
 
 int do_nonroot(int syscall) {
-	do_intercept(syscall, -EPERM);
-	do_release(syscall, -EPERM);
-	do_start(syscall, 0, -EPERM);
-	do_stop(syscall, 0, -EPERM);
-	do_start(syscall, 1, -EPERM);
-	do_stop(syscall, 1, -EPERM);
-	do_start(syscall, getpid(), 0);
-	do_start(syscall, getpid(), -EBUSY);
-	do_monitor(syscall);
-	do_stop(syscall, getpid(), 0);
-	do_stop(syscall, getpid(), -EINVAL);
+	// do_intercept(syscall, -EPERM);
+	// do_release(syscall, -EPERM);
+	// do_start(syscall, 0, -EPERM);
+	// do_stop(syscall, 0, -EPERM);
+	// do_start(syscall, 1, -EPERM);
+	// do_stop(syscall, 1, -EPERM);
+	do_start(-2, getpid(), -EINVAL);
+	// do_start(syscall, getpid(), -EBUSY);
+	// do_monitor(syscall);
+	// do_stop(syscall, getpid(), 0);
+	// do_stop(syscall, getpid(), -EINVAL);
 	return 0;
 }
 
@@ -169,9 +169,9 @@ int do_nonroot(int syscall) {
 void test_syscall(int syscall) {
 
 	// clear_log();
-	do_intercept(syscall, 0);
+	// do_intercept(syscall, 0);
 	// do_intercept(syscall, -EBUSY);
-	// do_as_guest("./test_full nonroot %d", syscall, 0);
+	do_as_guest("./test_full nonroot %d", syscall, 0);
 	// do_start(syscall, -2, -EINVAL);
 	// do_start(syscall, 0, 0);
 	// do_stop(syscall, 0, 0);
@@ -182,9 +182,6 @@ void test_syscall(int syscall) {
 	// do_stop(syscall, last_child, -EINVAL);
 	// do_release(syscall, 0);
 	// do_intercept(syscall,-EINVAL);
-	do_start(syscall, 12000 ,-EINVAL);
-	do_stop(syscall, 12000, -EINVAL);
-	do_release(syscall,0);
 }
 
 
