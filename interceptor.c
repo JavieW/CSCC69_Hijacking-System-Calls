@@ -472,7 +472,7 @@ long (*orig_custom_syscall)(void);
  */
 static int init_function(void) {
 	int s;
-
+	printk(NR_syscalls+1);
 	// Hijack MY_CUSTOM_SYSCALL and exit_group
 	spin_lock(&calltable_lock);
 	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
