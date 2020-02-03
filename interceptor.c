@@ -351,7 +351,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	if ((pid < 0) || (pid != 0 && (pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)))
 		return -EINVAL;
 
-	// cmd is only valid in bewlow 4 cases
+	// cmd is only valid in below 4 cases
 	if (cmd == REQUEST_SYSCALL_INTERCEPT)
 	{
 		// firt two cmds must be root (-EPERM)
@@ -380,7 +380,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		// first two cmds must be root (-EPERM)
 		if (current_uid() != 0)
 			return -EPERM;
-		// cannot de-intercepting a non-intercepted cmd (-EINVAL)
+		// cannot de-intercepting a non-intercepted syscall (-EINVAL)
 		if (table[syscall].intercepted == 0)
 		 	return -EINVAL;
 		
@@ -434,7 +434,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
 		} else {
-			// other pid need at least the owner (-EPERM)
+			// other pids need to be owned by the requesting process (-EPERM)
 			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EINVAL)
