@@ -182,8 +182,8 @@ void test_syscall(int syscall) {
 	// do_stop(syscall, last_child, -EINVAL);
 	// do_release(syscall, 0);
 	// do_intercept(syscall,-EINVAL);
-	do_start(syscall, 12000 ,0);
-	do_stop(syscall, 12000, 0);
+	do_start(syscall, 12000 ,-EINVAL);
+	do_stop(syscall, 12000, -EINVAL);
 	do_release(syscall,0);
 }
 
