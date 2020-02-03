@@ -253,8 +253,10 @@ void (*orig_exit_group)(int);
 void my_exit_group(int status) {
 
 	spin_lock(&pidlist_lock);
+	// remove pid from all lists
 	del_pid(current->pid);
 	spin_unlock(&pidlist_lock);
+	// call the original exit_group
 	orig_exit_group(status);
 }
 //----------------------------------------------------------------
@@ -281,7 +283,6 @@ asmlinkage long interceptor(struct pt_regs reg) {
 
 	int is_monitored;
 	spin_lock(&pidlist_lock);
-	// check if is monitored
 	is_monitored = check_pid_monitored(reg.ax, current->pid);
 	// log system call parameters IF is_monitored or monitor all
 	if((table[reg.ax].monitored == 1 && is_monitored) || (table[reg.ax].monitored == 2))
@@ -350,7 +351,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	if ((pid < 0) || (pid != 0 && (pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)))
 		return -EINVAL;
 
-	// check validation of cmd within if-condition
+	// cmd is only valid in bewlow 4 cases
 	if (cmd == REQUEST_SYSCALL_INTERCEPT)
 	{
 		// firt two cmds must be root (-EPERM)
