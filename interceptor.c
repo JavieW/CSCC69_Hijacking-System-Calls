@@ -357,7 +357,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		// firt two cmds must be root (-EPERM)
 		if (current_uid() != 0) 
 			return -EPERM;
-		// intercepting an intercepted cmd (-EBUSY)
+		// cannot intercept an intercepted cmd (-EBUSY)
 		if (table[syscall].intercepted == 1)
 			return -EBUSY;
 
@@ -407,17 +407,19 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			table[syscall].monitored = 2;
 			spin_unlock(&pidlist_lock);
 		} else {
-			// other pid need at least the owner (-EPERM)
+			// other pid need at least be owner (-EPERM)
 			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
-			// cannot stop an non-monitored pid (-EBUSY)
+			// cannot monitor an monitored pid (-EBUSY)
 			if (check_pid_monitored(syscall, pid) == 1)
 				return -EBUSY;
 			// monitor the specific pid and handle -ENOMEM
 			if (add_pid_sysc((pid_t) pid, syscall) == -ENOMEM)
 				return -ENOMEM;
+			// update monitor status when necessary
 			spin_lock(&pidlist_lock);
-			table[syscall].monitored = 1;
+			if (table[syscall].monitored == 0)
+				table[syscall].monitored = 1;
 			spin_unlock(&pidlist_lock);
 		}
 	}
@@ -427,7 +429,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			// pid is 0 need root (-EPERM)
 			if (current_uid() != 0)
 				return -EPERM;
-			// stop monitor all pids
+			// destroy_list will access to our table
 			spin_lock(&pidlist_lock);
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
@@ -485,10 +487,9 @@ static int init_function(void) {
 	set_addr_ro((unsigned long)sys_call_table);
 	spin_unlock(&calltable_lock);
 
-	// initializations of table 
+	// initializations of our table 
 	spin_lock(&pidlist_lock);
 	for(s = 0; s < NR_syscalls+1; s++) {
-		// initialize enties in my_table
 		table[s].intercepted = 0;
 		table[s].monitored = 0;
 		table[s].listcount = 0;
