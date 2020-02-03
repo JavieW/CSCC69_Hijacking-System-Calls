@@ -351,13 +351,13 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	if ((pid < 0) || (pid != 0 && (pid_task(find_vpid(pid), PIDTYPE_PID) == NULL)))
 		return -EINVAL;
 
-	// cmd is only valid in bewlow 4 cases
+	// cmd is only valid in below 4 cases
 	if (cmd == REQUEST_SYSCALL_INTERCEPT)
 	{
 		// firt two cmds must be root (-EPERM)
 		if (current_uid() != 0) 
 			return -EPERM;
-		// intercepting an intercepted cmd (-EBUSY)
+		// intercepting an intercepted syscall (-EBUSY)
 		if (table[syscall].intercepted == 1)
 			return -EBUSY;
 
@@ -380,7 +380,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		// first two cmds must be root (-EPERM)
 		if (current_uid() != 0)
 			return -EPERM;
-		// cannot de-intercepting a non-intercepted cmd (-EINVAL)
+		// cannot de-intercepting a non-intercepted syscall (-EINVAL)
 		if (table[syscall].intercepted == 0)
 		 	return -EINVAL;
 		
@@ -407,7 +407,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			table[syscall].monitored = 2;
 			spin_unlock(&pidlist_lock);
 		} else {
-			// other pid need at least the owner (-EPERM)
+			// other pids need to be owned by the requesting process (-EPERM)
 			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EBUSY)
@@ -427,12 +427,12 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			// pid is 0 need root (-EPERM)
 			if (current_uid() != 0)
 				return -EPERM;
-			// stop monitor all pids
+			// stop monitoring all pids
 			spin_lock(&pidlist_lock);
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
 		} else {
-			// other pid need at least the owner (-EPERM)
+			// other pids need to be owned by the requesting process (-EPERM)
 			if ((current_uid() != 0 && (check_pid_from_list(pid, current->pid) != 0)))
 				return -EPERM;
 			// cannot stop an non-monitored pid (-EINVAL)
@@ -488,7 +488,7 @@ static int init_function(void) {
 	// initializations of table 
 	spin_lock(&pidlist_lock);
 	for(s = 0; s < NR_syscalls+1; s++) {
-		// initialize enties in my_table
+		// initialize the properties of my_table
 		table[s].intercepted = 0;
 		table[s].monitored = 0;
 		table[s].listcount = 0;
